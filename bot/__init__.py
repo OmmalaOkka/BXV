@@ -27,6 +27,12 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 
 LOGGER = getLogger(__name__)
 
+PRE_DICT = {}
+LEECH_DICT = {}
+CAP_DICT = {}
+TIME_GAP_STORE = {}
+TIME_GAP = int(600)
+
 load_dotenv('config.env', override=True)
 
 Interval = []
@@ -136,23 +142,18 @@ if len(SUDO_USERS) != 0:
     aid = SUDO_USERS.split()
     for id_ in aid:
         user_data[int(id_.strip())] = {'is_sudo': True}
+        
+PAID_USERS = environ.get('PAID_USERS', '')
+if len(PAID_USERS) != 0:
+    aid = PAID_USERS.split()
+    for id_ in aid:
+        user_data[int(id_.strip())] = {'is_paid': True}
 
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
     fx = EXTENSION_FILTER.split()
     for x in fx:
         GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
-
-IS_PREMIUM_USER = False
-USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
-if len(USER_SESSION_STRING) == 0:
-    log_info("Creating client from BOT_TOKEN")
-    app = Client(name='pyrogram', api_id=TELEGRAM_API, api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
-else:
-    log_info("Creating client from USER_SESSION_STRING")
-    app = Client(name='pyrogram', api_id=TELEGRAM_API, api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    with app:
-        IS_PREMIUM_USER = app.me.is_premium
 
 RSS_USER_SESSION_STRING = environ.get('RSS_USER_SESSION_STRING', '')
 if len(RSS_USER_SESSION_STRING) == 0:
@@ -197,13 +198,32 @@ SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
 if len(SEARCH_PLUGINS) == 0:
     SEARCH_PLUGINS = ''
 
-MAX_SPLIT_SIZE = 4194304000 if IS_PREMIUM_USER else 2097152000
+MAX_SPLIT_SIZE = 2097152000
 
-LEECH_SPLIT_SIZE = environ.get('LEECH_SPLIT_SIZE', '')
-if len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
-    LEECH_SPLIT_SIZE = MAX_SPLIT_SIZE
-else:
+try:
+    LEECH_SPLIT_SIZE = getConfig('LEECH_SPLIT_SIZE')
+    if len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
+       raise KeyError
     LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
+except:
+    LEECH_SPLIT_SIZE = MAX_SPLIT_SIZE
+
+try:
+    USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
+    if len(USER_SESSION_STRING) == 0:
+        raise KeyError
+    app_session = Client(name='app_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    if not app_session:
+        LOGGER.error("Cannot initialized User Session. Please regenerate USER_SESSION_STRING")
+    else:
+        app_session.start()
+        if (app_session.get_me()).is_premium:
+            LEECH_SPLIT_SIZE = 4194304000
+            LOGGER.info("Premium user detected. Upload limit is 4GB now.")
+except:
+    USER_SESSION_STRING = None
+    app_session = None
+LOGGER.info(f"LEECH_SPLIT_SIZE: {LEECH_SPLIT_SIZE}")
 
 STATUS_UPDATE_INTERVAL = environ.get('STATUS_UPDATE_INTERVAL', '')
 if len(STATUS_UPDATE_INTERVAL) == 0:
@@ -216,6 +236,12 @@ if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
     AUTO_DELETE_MESSAGE_DURATION = 30
 else:
     AUTO_DELETE_MESSAGE_DURATION = int(AUTO_DELETE_MESSAGE_DURATION)
+    
+AUTO_DELETE = environ.get('AUTO_DELETE', '')
+if len(AUTO_DELETE) == 0:
+    AUTO_DELETE = 30
+else:
+    AUTO_DELETE = int(AUTO_DELETE)
 
 YT_DLP_QUALITY = environ.get('YT_DLP_QUALITY', '')
 if len(YT_DLP_QUALITY) == 0:
@@ -268,6 +294,84 @@ AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
 EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
 
+try:
+    PHPSESSID = environ.get('PHPSESSID')
+    CRYPT = environ.get('CRYPT')
+    if len(PHPSESSID) == 0 or len(CRYPT) == 0:
+        raise KeyError
+except KeyError:
+    PHPSESSID = None
+    CRYPT = None
+    
+try:
+    APPDRIVE_EMAIL = environ.get('APPDRIVE_EMAIL')
+    APPDRIVE_PASS = environ.get('APPDRIVE_PASS')
+    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
+        raise KeyError
+except KeyError:
+    APPDRIVE_EMAIL = None
+    APPDRIVE_PASS = None
+try:
+    BOT_PM = environ.get('BOT_PM')
+    BOT_PM = BOT_PM.lower() == 'true'
+except KeyError:
+    BOT_PM = False
+    
+try:
+    IMAGE_URL = environ.get('IMAGE_URL')
+    if len(IMAGE_URL) == 0:
+        IMAGE_URL = None
+except:
+    IMAGE_URL = 'https://te.legra.ph/file/f9a9d1413cd34936d35f6.jpg'   
+try:
+    LOG_CHANNEL_1 = int(environ.get('LOG_CHANNEL_1'))
+    if int(LOG_CHANNEL_1) == 0:
+        raise KeyError
+except:
+    LOGGER.info('LOG_CHANNEL For Paid not provided!')
+    LOG_CHANNEL_1 = None 
+try:
+    LOG_CHANNEL_2 = int(environ.get('LOG_CHANNEL_2'))
+    if int(LOG_CHANNEL_2) == 0:
+        raise KeyError
+except:
+    LOGGER.info('LOG_CHANNEL For Normal not provided!')
+    LOG_CHANNEL_2 = None 
+try:
+    LOG_LEECH = int(environ.get('LOG_LEECH'))
+    if int(LOG_LEECH) == 0:
+        raise KeyError
+except:
+    LOGGER.info('LOG_LEECH not provided!')
+    LOG_LEECH = None 
+try:
+    LOG_CHANNEL_LOGGER = int(environ.get('LOG_CHANNEL_LOGGER'))
+    if int(LOG_CHANNEL_LOGGER) == 0:
+        raise KeyError
+except:
+    LOGGER.info('LOG_CHANNEL_LOGGER not provided!')
+    LOG_CHANNEL_LOGGER = None  
+try:
+    TIMEZONE = environ.get('TIMEZONE')
+    if len(TIMEZONE) == 0:
+        TIMEZONE = None
+except KeyError:
+    TIMEZONE = 'Asia/Kolkata'
+try:
+    TOTAL_TASKS_LIMIT = environ.get('TOTAL_TASKS_LIMIT')
+    if len(TOTAL_TASKS_LIMIT) == 0:
+        raise KeyError
+    TOTAL_TASKS_LIMIT = int(TOTAL_TASKS_LIMIT)
+except KeyError:
+    TOTAL_TASKS_LIMIT = None
+try:
+    USER_TASKS_LIMIT = environ.get('USER_TASKS_LIMIT')
+    if len(USER_TASKS_LIMIT) == 0:
+        raise KeyError
+    USER_TASKS_LIMIT = int(USER_TASKS_LIMIT)
+except KeyError:
+    USER_TASKS_LIMIT = None
+    
 SERVER_PORT = environ.get('SERVER_PORT', '')
 if len(SERVER_PORT) == 0:
     SERVER_PORT = 80
