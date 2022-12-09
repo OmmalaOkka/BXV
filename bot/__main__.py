@@ -11,7 +11,7 @@ from telegram import ParseMode
 from telegram.ext import CommandHandler
 
 from bot import bot, dispatcher, updater, botStartTime, IGNORE_PENDING_REQUESTS, LOGGER, Interval, \
-                DATABASE_URL, app, main_loop, QbInterval, INCOMPLETE_TASK_NOTIFIER, AUTHORIZED_CHATS, TIMEZONE, IMAGE_URL, CMD_INDEX
+                DATABASE_URL, app, main_loop, QbInterval, INCOMPLETE_TASK_NOTIFIER, AUTHORIZED_CHATS, TIMEZONE, IMAGE_URL, CMD_PERFIX
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from .helper.ext_utils.db_handler import DbManger
@@ -155,7 +155,7 @@ def main():
                         chat_id, msg_id = map(int, f)
                     msg = 'Restarted Successfully!'
                 else:
-                    msg = f"<b>Every New End is a New Begining.\n\nX{CMD_INDEX} BOT RESTARTED ⚡️\n{jam}\n\n🗺️ TimeZone: {TIMEZONE}\n\nPlease Re-Add the Torrent's</b>"
+                    msg = f"<b>Every New End is a New Begining.\n\nX{CMD_PERFIX} BOT RESTARTED ⚡️\n{jam}\n\n🗺️ TimeZone: {TIMEZONE}\n\nPlease Re-Add the Torrent's</b>"
                 for tag, links in data.items():
                     msg += f"\n\n{tag}: "
                     for index, link in enumerate(links, start=1):
