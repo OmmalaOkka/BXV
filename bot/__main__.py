@@ -1,13 +1,17 @@
+import pytz
+
 from signal import signal, SIGINT
 from os import path as ospath, remove as osremove, execl as osexecl
 from subprocess import run as srun, check_output
 from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, virtual_memory, net_io_counters, boot_time
 from time import time
+from datetime import datetime
 from sys import executable
+from telegram import ParseMode
 from telegram.ext import CommandHandler
 
 from bot import bot, dispatcher, updater, botStartTime, IGNORE_PENDING_REQUESTS, LOGGER, Interval, \
-                DATABASE_URL, app, main_loop, QbInterval, INCOMPLETE_TASK_NOTIFIER
+                DATABASE_URL, app, main_loop, QbInterval, INCOMPLETE_TASK_NOTIFIER, AUTHORIZED_CHATS, TIMEZONE, IMAGE_URL, CMD_INDEX
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from .helper.ext_utils.db_handler import DbManger
@@ -18,6 +22,8 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, \
                      shell, eval, delete, count, users_settings, search, rss, bt_select, bot_settings
 
+now = datetime.now(pytz.timezone(f'{TIMEZONE}'))
+IMAGE_X = f"{IMAGE_URL}"
 
 def stats(update, context):
     if ospath.exists('.git'):
@@ -43,21 +49,21 @@ def stats(update, context):
             f'<b>Memory Total:</b> {get_readable_file_size(memory.total)}\n'\
             f'<b>Memory Free:</b> {get_readable_file_size(memory.available)}\n'\
             f'<b>Memory Used:</b> {get_readable_file_size(memory.used)}\n'
-    sendMessage(stats, context.bot, update.message)
+    update.effective_message.reply_photo(IMAGE_X, stats, parse_mode=ParseMode.HTML)
 
 def start(update, context):
     buttons = ButtonMaker()
-    buttons.buildbutton("Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
-    buttons.buildbutton("Owner", "https://www.github.com/anasty17")
-    reply_markup = buttons.build_menu(2)
+    buttons.buildbutton("Baasha X Cloud", "https://t.me/BaashaXclouD")
+    reply_markup = buttons.build_menu(1)
+    currentTime = get_readable_time(time() - botStartTime)
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
-This bot can mirror all your links to Google Drive or to telegram!
-Type /{BotCommands.HelpCommand} to get a list of available commands
+<b>X{CMD_INDEX} BoT is Working.\n\nStill {currentTime}\n\n#BaashaXclouD</b>
 '''
         sendMarkup(start_string, context.bot, update.message, reply_markup)
     else:
-        sendMarkup('Not an Authorized user, deploy your own mirror-leech bot', context.bot, update.message, reply_markup)
+        msg1 = f'Hey👋,\n\nThank You for subcribing ME! #X{CMD_INDEX}.\n\n#BaashaXclouD'
+        update.effective_message.reply_photo(IMAGE_X, msg1, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
 
 def restart(update, context):
     restart_message = sendMessage("Restarting...", context.bot, update.message)
@@ -138,6 +144,9 @@ def bot_help(update, context):
 
 def main():
     start_cleanup()
+    notifier_dict = False
+    kie = datetime.now(pytz.timezone(f'{TIMEZONE}'))
+    jam = kie.strftime('\n📅 Date: %d/%m/%Y\n⏲️ Time: %I:%M%P')
     if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
         if notifier_dict := DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
@@ -146,7 +155,7 @@ def main():
                         chat_id, msg_id = map(int, f)
                     msg = 'Restarted Successfully!'
                 else:
-                    msg = 'Bot Restarted!'
+                    msg = f"<b>Every New End is a New Begining.\n\nX{CMD_INDEX} BOT RESTARTED ⚡️\n{jam}\n\n🗺️ TimeZone: {TIMEZONE}\n\nPlease Re-Add the Torrent's</b>"
                 for tag, links in data.items():
                     msg += f"\n\n{tag}: "
                     for index, link in enumerate(links, start=1):
